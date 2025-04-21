@@ -1,0 +1,4 @@
+asn_filters:
+  filters:
+    - country: CN
+      regexp: "(unicom|cnc)"
