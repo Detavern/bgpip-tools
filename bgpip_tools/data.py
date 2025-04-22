@@ -1,12 +1,14 @@
 import os
 import json
 
-from .config import DATA_DIR, dtnow
-from .utils import download_asn_data
+import pybgpstream
+
+from .config import DATA_DIR, BGP_V4_COLLECTOR, BGP_V6_COLLECTOR, DT_NOW
+from .utils import download_asn_data, query_latest_bgp_data, download_remote_data
 
 
 def prepare_data_asn():
-    filename = f'asn_{dtnow.strftime("%Y%m%d")}.jsonl'
+    filename = f'asn_{DT_NOW.strftime("%Y%m%d")}.jsonl'
     filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
     if os.path.isfile(filepath) is False:
         download_asn_data(DATA_DIR, filename)
@@ -15,7 +17,7 @@ def prepare_data_asn():
 
 def stat_data_asn(filename=None):
     if filename is None:
-        filename = f'asn_{dtnow.strftime("%Y%m%d")}.jsonl'
+        filename = f'asn_{DT_NOW.strftime("%Y%m%d")}.jsonl'
     filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
     print(f"DATA[asninfo] load data at {filepath}")
     if os.path.isfile(filepath) is False:
@@ -28,7 +30,7 @@ def stat_data_asn(filename=None):
 
 def get_stream_asn(filename=None):
     if filename is None:
-        filename = f'asn_{dtnow.strftime("%Y%m%d")}.jsonl'
+        filename = f'asn_{DT_NOW.strftime("%Y%m%d")}.jsonl'
     filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
     print(f"DATA[asninfo] load data at {filepath}")
     if os.path.isfile(filepath) is False:
@@ -40,3 +42,43 @@ def get_stream_asn(filename=None):
             if line:
                 yield json.loads(line)
 
+
+def get_bgp_info():
+    info_mp = {
+        'ipv4': query_latest_bgp_data(BGP_V4_COLLECTOR),
+        'ipv6': query_latest_bgp_data(BGP_V6_COLLECTOR),
+    }
+    res = {}
+    for k, info in info_mp.items():
+        url = info['url']
+        filename = os.path.basename(url)
+        filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
+        if os.path.isfile(filepath) is False:
+            download_remote_data(url, DATA_DIR, filename)
+        print(f"DATA[bgp] found at {filepath}")
+        res[k] = {
+            'filename': filename,
+            'data_dir': DATA_DIR,
+            'filepath': filepath,
+            'rough_size': info['rough_size'],
+        }
+    return res
+
+
+def get_stream_bgp(filepath):
+    """Creates a generator that yields BGP elements from a given RIB (Routing Information Base) file.
+
+    This function uses the pybgpstream library to read a BGP RIB file and iterate through its records.
+    For valid records, it yields each BGP element contained within.
+
+    likewise for `bgpreader -d singlefile -o rib-file=rib.gz -n 10`
+    """
+    stream = pybgpstream.BGPStream(data_interface='singlefile')
+    stream.set_data_interface_option("singlefile", "rib-file", filepath)
+    for rec in stream.records():
+        if rec.status != "valid":
+            raise ValueError(f"record in RIB file at {filepath} is not valid")
+
+        # Each record contains multiple elements
+        for elem in rec:
+            yield elem

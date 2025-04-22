@@ -6,9 +6,13 @@ WORK_DIR = os.getcwd()
 DATA_DIR = os.path.join(WORK_DIR, 'data')
 CONFIG_DIR = os.path.join(WORK_DIR, 'config')
 DIST_DIR = os.path.join(WORK_DIR, 'dist')
-dtnow = datetime.datetime.now(datetime.timezone.utc)
+
+BGP_V4_COLLECTOR = 'rrc00'
+BGP_V6_COLLECTOR = 'route-views6'
 
 _CONFIG_DICT = {}
+
+DT_NOW = datetime.datetime.now(datetime.timezone.utc)
 
 
 def _load_config():
