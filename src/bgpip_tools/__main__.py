@@ -40,6 +40,7 @@ def asn_group():
 @click.pass_context
 def asn_prepare(ctx, **kwargs):
     from .data import prepare_data_asn
+    os.makedirs(DATA_DIR, exist_ok=True)
     prepare_data_asn()
 
 
