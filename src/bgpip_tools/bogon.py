@@ -8,7 +8,7 @@ def get_bogon_ipset(v4=True, v6=True):
     bogon_data = get_bogon_data()
     for k, bogons in bogon_data.items():
         if v4 and k == 'ipv4' or v6 and k == 'ipv6':
-            (ipset.add(cidr) for cidr in bogons)
+            [ipset.add(cidr) for cidr in bogons]
     return ipset
 
 
