@@ -43,6 +43,10 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: bgpkit-broker,bgpkit-parser
+      - name: Clear python cache
+        run: |
+          rm -rf /__t/Python
+      - run: cat /etc/os-release
       - name: Setup python
         uses: actions/setup-python@v5
         with:
