@@ -1,8 +1,10 @@
 import os
 import json
+import importlib.resources as pkg_resources
 
 import pybgpstream
 
+from . import resources
 from .config import (
     DATA_DIR, BGP_V4_COLLECTOR, BGP_V6_COLLECTOR, BOGONS_DATA,
     DT_NOW, ROOT_LOGGER,
@@ -57,7 +59,28 @@ def prepare_data_bogons():
         logger.info(f"bogon data found at {filepath}")
 
 
-def get_bogon_data():
+def get_bogon_data(collections: set=None):
+    with pkg_resources.open_text(resources, 'bogon.json') as f:
+        bogons = json.load(f)
+
+    data = {}
+    if collections:
+        if collections not in bogons['ipv4']:
+            raise KeyError(f"bogons category not found {collections}")
+        data['ipv4'] = bogons['ipv4'][collections]
+        data['ipv6'] = bogons['ipv6'][collections]
+        return data
+
+    data['ipv4'] = []
+    data['ipv6'] = []
+    for v in bogons['ipv4'].values():
+        data['ipv4'].extend(v)
+    for v in bogons['ipv6'].values():
+        data['ipv6'].extend(v)
+    return data
+
+
+def get_online_bogon_data():
     data = {}
     for k, v in BOGONS_DATA.items():
         data[k] = []
