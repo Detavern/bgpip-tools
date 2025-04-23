@@ -32,6 +32,8 @@ jobs:
           apt-get install -y git curl wget lsb-release sudo build-essential
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup rust
         uses: dtolnay/rust-toolchain@stable
       - name: Setup rust cargo
