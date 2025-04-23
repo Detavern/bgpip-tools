@@ -21,6 +21,9 @@ jobs:
       image: python:3-bookworm
     env:
       TQDM_MININTERVAL: 5
+      ASNINFO_VERSION: "0.2.1"
+      BGPKIT_BROKER_VERSION: "0.7.6"
+      BGPKIT_PARSER_VERSION: "0.10.6"
     steps:
       - name: Install dependencies
         run: |
@@ -42,7 +45,10 @@ jobs:
       - name: Install bgpkit
         uses: taiki-e/install-action@v2
         with:
-          tool: asninfo,bgpkit-broker,bgpkit-parser
+          tool: >-
+            asninfo@${{ env.ASNINFO_VERSION }},
+            bgpkit-broker@${{ env.BGPKIT_BROKER_VERSION }},
+            bgpkit-parser@${{ env.BGPKIT_PARSER_VERSION }}
       - name: Install project
         run: pip install .
       - name: Generate ip lists
