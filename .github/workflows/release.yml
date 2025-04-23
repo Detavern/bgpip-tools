@@ -21,6 +21,7 @@ jobs:
       image: python:3-bookworm
     env:
       TQDM_MININTERVAL: 5
+      DISABLE_DOWNLOAD_PROGRESS: 1
       ASNINFO_VERSION: "0.2.1"
       BGPKIT_BROKER_VERSION: "0.7.6"
       BGPKIT_PARSER_VERSION: "0.10.6"

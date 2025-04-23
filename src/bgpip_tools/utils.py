@@ -37,10 +37,12 @@ def query_latest_bgp_data(collector: str):
     raise ValueError(f"could not find RIB file from remote: {js}")
 
 
-def download_remote_data(url, data_dir, filename):
+def download_remote_data(url, data_dir, filename, quiet=False):
     filepath = os.path.join(data_dir, filename)
 
     cmds = ['wget', url, '-O', filepath]
+    if quiet or os.environ.get("DISABLE_DOWNLOAD_PROGRESS") == '1':
+        cmds.append('-q')
     if command_exists(cmds[0]) is False:
         raise click.ClickException(f'Could not find "{cmds[0]}" in the $PATH')
     completed = subprocess.run(cmds)
