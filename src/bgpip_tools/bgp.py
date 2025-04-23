@@ -35,7 +35,7 @@ def load_cidr_by_asns(bgp_config, asns, v4=False, v6=False, dry_run=False):
         if 'as-path' not in elem.fields or 'prefix' not in elem.fields:
             return
         prefix = elem.fields['prefix']
-        is_v6_prefix = '::' in prefix
+        is_v6_prefix = ':' in prefix
         if prefix == '0.0.0.0/0' or prefix == '::/0':
             return
 
