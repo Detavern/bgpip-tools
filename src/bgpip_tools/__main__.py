@@ -100,10 +100,8 @@ def bogon_group():
 @click.pass_context
 def bogon_prepare(ctx, **kwargs):
     from .data import prepare_data_bogons
-    from .bogon import get_bogon_ipsets
     os.makedirs(DATA_DIR, exist_ok=True)
     prepare_data_bogons()
-    ctx.obj['bogon'] = get_bogon_ipsets()
 
 
 @bogon_group.command('check')
@@ -111,13 +109,15 @@ def bogon_prepare(ctx, **kwargs):
 @click.pass_context
 def bogon_check(ctx, address):
     """Check a ip address/network is bogon or not"""
+    from .bogon import get_bogon_ipsets
+
     ctx.forward(bogon_prepare)
+    bogon_ipsets = get_bogon_ipsets()
     net = load_network(address)
-    bogon_sets = ctx.obj['bogon']
     if net.version == 4:
-        print(net in bogon_sets['ipv4'])
+        print(net in bogon_ipsets['ipv4'])
     else:
-        print(net in bogon_sets['ipv6'])
+        print(net in bogon_ipsets['ipv6'])
 
 
 @cli.group('bgp')
@@ -141,6 +141,9 @@ def bgp_prepare(ctx, **kwargs):
         if 'output_dir' in ctx.params:
             kw['output_dir'] = ctx.params['output_dir']
         ctx.obj['asns'] = ctx.invoke(asn_generate, **kw)
+
+    # prepare bogon
+    ctx.invoke(bogon_prepare, **kw)
 
     # load bgp info
     if 'bgp' not in ctx.obj:

@@ -4,6 +4,7 @@ import tqdm
 import netaddr
 
 from .data import get_stream_bgp
+from .bogon import get_bogon_ipset
 from .config import ROOT_LOGGER
 
 DRY_RUN_COUNTER = 100_000
@@ -67,9 +68,16 @@ def load_cidr_by_asns(bgp_config, asns, v4=False, v6=False, dry_run=False):
         except KeyboardInterrupt:
             break
 
+    # bogon filter
+    bogon_ipset = get_bogon_ipset(v4, v6)
+    def cidrs_filter(cidrs, ipset):
+        for cidr in cidrs:
+            if cidr not in ipset:
+                yield cidr
+
     cidr_map = {}
-    for k, v in result.items():
-        logger.info(f"merging {k}[{len(v)}] cidrs ...")
-        merged = netaddr.cidr_merge(v)
+    for k, cidrs in result.items():
+        logger.info(f"merging {k}[{len(cidrs)}] cidrs ...")
+        merged = netaddr.cidr_merge(cidrs_filter(cidrs, bogon_ipset))
         cidr_map[k] = [str(v.cidr) for v in merged]
     return cidr_map
