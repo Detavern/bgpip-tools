@@ -48,8 +48,12 @@ def get_bgp_info():
         'ipv4': query_latest_bgp_data(BGP_V4_COLLECTOR),
         'ipv6': query_latest_bgp_data(BGP_V6_COLLECTOR),
     }
+    return info_mp
+
+
+def prepare_data_bgp():
     res = {}
-    for k, info in info_mp.items():
+    for k, info in get_bgp_info().items():
         url = info['url']
         filename = os.path.basename(url)
         filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
@@ -57,8 +61,9 @@ def get_bgp_info():
             download_remote_data(url, DATA_DIR, filename)
         print(f"DATA[bgp] found at {filepath}")
         res[k] = {
-            'filename': filename,
+            'collector': info['collector'],
             'data_dir': DATA_DIR,
+            'filename': filename,
             'filepath': filepath,
             'rough_size': info['rough_size'],
         }

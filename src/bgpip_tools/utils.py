@@ -33,6 +33,7 @@ def query_latest_bgp_data(collector: str):
     js = json.loads(completed.stdout)
     for info in js:
         if info.get('data_type') == 'rib':
+            info['collector'] = collector
             return info
     raise ValueError(f"could not find RIB file from remote: {js}")
 

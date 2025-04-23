@@ -8,8 +8,9 @@ from .data import get_stream_bgp
 DRY_RUN_COUNTER = 100_000
 
 
-def load_cidr_by_asns(bgp_config, asns, dry_run=False):
-    """
+def load_cidr_by_asns(bgp_config, asns, v4=False, v6=False, dry_run=False):
+    """Loading CIDRs from BGP snapshots by asns_filters
+
     BGPElem
     -------
     record_type|type|time|project|collector|router|router_ip|peer_asn|peer_address
@@ -20,6 +21,8 @@ def load_cidr_by_asns(bgp_config, asns, dry_run=False):
     asns_sets = {k: set(v) for k, v in asns.items()}
     result = {k: set() for k in asns}
     as_path_splitter = re.compile('[ ,]+')
+    if not v4 and not v6:
+        raise ValueError('either v4 or v6 should be True')
 
     def _handle_elem(elem):
         if elem.record_type != 'rib':
@@ -29,6 +32,7 @@ def load_cidr_by_asns(bgp_config, asns, dry_run=False):
         if 'as-path' not in elem.fields or 'prefix' not in elem.fields:
             return
         prefix = elem.fields['prefix']
+        is_v6_prefix = '::' in prefix
         if prefix == '0.0.0.0/0' or prefix == '::/0':
             return
 
@@ -42,8 +46,10 @@ def load_cidr_by_asns(bgp_config, asns, dry_run=False):
         else:
             for k, v in asns_sets.items():
                 if last_asn in v:
-                    # print(f'match: {elem.fields["prefix"]}')
-                    result[k].add(prefix)
+                    if v4 and not is_v6_prefix:
+                        result[k].add(prefix)
+                    if v6 and is_v6_prefix:
+                        result[k].add(prefix)
 
     # wrapper
     for i, elem in enumerate(tqdm.tqdm(
@@ -52,10 +58,9 @@ def load_cidr_by_asns(bgp_config, asns, dry_run=False):
         )):
         try:
             _handle_elem(elem)
+            if dry_run and i > DRY_RUN_COUNTER:
+                break
         except KeyboardInterrupt:
-            break
-
-        if dry_run and i > DRY_RUN_COUNTER:
             break
 
     cidr_map = {}

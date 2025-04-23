@@ -55,9 +55,9 @@ def asn_stat(ctx):
 
 @asn_group.command('generate')
 @click.pass_context
-@click.option('-i', '--indent', type=int, default=2)
-@click.option('-o', '--output-dir', type=str, default=DIST_DIR)
-@click.option('-f', '--filename', type=str, default=DEFAULT_ASNS_FILENAME)
+@click.option('-i', '--indent', type=int, default=2, help="output strings/file indentations if available")
+@click.option('-o', '--output-dir', type=str, default=DIST_DIR, help="output directory")
+@click.option('-f', '--filename', type=str, default=DEFAULT_ASNS_FILENAME, help="output filename")
 def asn_generate(ctx, indent, output_dir, filename):
     from .asn import load_asns_by_config
 
@@ -81,7 +81,7 @@ def bgp_group():
 @bgp_group.command('prepare', hidden=True)
 @click.pass_context
 def bgp_prepare(ctx, **kwargs):
-    from .data import get_bgp_info
+    from .data import prepare_data_bgp
 
     # load asns
     if kwargs.get('use_dist'):
@@ -97,17 +97,27 @@ def bgp_prepare(ctx, **kwargs):
 
     # load bgp info
     if 'bgp' not in ctx.obj:
-        ctx.obj['bgp'] = get_bgp_info()
+        ctx.obj['bgp'] = prepare_data_bgp()
+
+
+@bgp_group.command('info')
+@click.option('-i', '--indent', type=int, default=2, help="output strings/file indentations if available")
+@click.pass_context
+def bgp_info(ctx, indent):
+    """Query remote BGP information"""
+    from .data import get_bgp_info
+    print(json.dumps(get_bgp_info(), indent=indent))
 
 
 @bgp_group.command('generate')
 @click.option('-u', '--use-dist', is_flag=True, default=False)
-@click.option('-o', '--output-dir', type=str, default=DIST_DIR)
-@click.option('-d', '--dry-run', is_flag=True, help='dry run')
-@click.option('-n4', '--no-ipv4', is_flag=True, help='skip ipv4 cidrs generate')
-@click.option('-n6', '--no-ipv6', is_flag=True, help='skip ipv6 cidrs generate')
+@click.option('-o', '--output-dir', type=str, default=DIST_DIR, help="output directory")
+@click.option('-d', '--dry-run', is_flag=True, help="dry run")
+@click.option('-n4', '--no-ipv4', is_flag=True, help="skip ipv4 cidrs generate")
+@click.option('-n6', '--no-ipv6', is_flag=True, help="skip ipv6 cidrs generate")
 @click.pass_context
 def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
+    """Generate CIDRs from ASN filters and BGP data"""
     from .bgp import load_cidr_by_asns
 
     ctx.forward(bgp_prepare)
@@ -117,7 +127,8 @@ def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
     if not no_ipv4:
         v4_output_dir = os.path.join(output_dir, DEFAULT_CIDRS_DIR, 'v4')
         os.makedirs(v4_output_dir, exist_ok=True)
-        cidr_map['ipv4'] = load_cidr_by_asns(ctx.obj['bgp']['ipv4'], ctx.obj['asns'], dry_run)
+        cidr_map['ipv4'] = load_cidr_by_asns(
+            ctx.obj['bgp']['ipv4'], ctx.obj['asns'], v4=True, dry_run=dry_run)
         for k, cidrs in cidr_map['ipv4'].items():
             fp = os.path.join(v4_output_dir, f'{k}.txt')
             with open(fp, 'w') as f:
@@ -128,7 +139,8 @@ def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
     if not no_ipv6:
         v6_output_dir = os.path.join(output_dir, DEFAULT_CIDRS_DIR, 'v6')
         os.makedirs(v6_output_dir, exist_ok=True)
-        cidr_map['ipv6'] = load_cidr_by_asns(ctx.obj['bgp']['ipv6'], ctx.obj['asns'], dry_run)
+        cidr_map['ipv6'] = load_cidr_by_asns(
+            ctx.obj['bgp']['ipv6'], ctx.obj['asns'], v6=True, dry_run=dry_run)
         for k, cidrs in cidr_map['ipv6'].items():
             fp = os.path.join(v6_output_dir, f'{k}.txt')
             with open(fp, 'w') as f:
