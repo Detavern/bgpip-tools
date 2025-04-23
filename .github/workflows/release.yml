@@ -17,9 +17,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: debian:latest
     env:
       TQDM_MININTERVAL: 5
     steps:
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y git curl wget python3 python3-pip
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup rust
@@ -30,7 +36,9 @@ jobs:
         run: >-
           curl -s https://pkg.caida.org/os/$(lsb_release -si|awk '{print tolower($0)}')/bootstrap.sh | bash
       - name: Install bgpstream library
-        run: sudo apt-get update && sudo apt install -y wget bgpstream
+        run: |
+          apt-get update
+          apt install -y bgpstream
       - name: Install bgpkit
         uses: taiki-e/install-action@v2
         with:
