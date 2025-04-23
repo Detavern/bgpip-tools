@@ -17,6 +17,17 @@ _CONFIG_DICT = {}
 
 DT_NOW = datetime.datetime.now(datetime.timezone.utc)
 
+BOGONS_DATA = {
+    'ipv4': {
+        'filename': f'bogons_v4_{DT_NOW.strftime("%Y%m%d")}.txt',
+        'url': 'https://team-cymru.org/Services/Bogons/fullbogons-ipv4.txt',
+    },
+    'ipv6': {
+        'filename': f'bogons_v6_{DT_NOW.strftime("%Y%m%d")}.txt',
+        'url': 'https://team-cymru.org/Services/Bogons/fullbogons-ipv6.txt',
+    },
+}
+
 # logger
 LOGGING_LEVEL = logging.INFO
 ROOT_LOGGER = logging.getLogger()

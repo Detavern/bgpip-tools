@@ -4,6 +4,7 @@ import os
 import json
 
 import click
+import netaddr
 
 from .config import DATA_DIR, DIST_DIR, ROOT_LOGGER, load_config
 
@@ -11,6 +12,15 @@ DEFAULT_ASNS_FILENAME = 'asns.json'
 DEFAULT_CIDRS_DIR = 'cidrs'
 
 logger = ROOT_LOGGER.getChild('cli')
+
+
+def load_network(string):
+    try:
+        net = netaddr.IPNetwork(string)
+    except netaddr.AddrFormatError:
+        return
+    else:
+        return net
 
 
 @click.group()
@@ -78,6 +88,36 @@ def asn_generate(ctx, indent, output_dir, filename):
         logger.getChild('asn').info(f'{filename} generated at {fp}')
         json.dump(asns, f, indent=indent)
     return asns
+
+
+
+@cli.group('bogon')
+def bogon_group():
+    """Bogon network related commands"""
+
+
+@bogon_group.command('prepare', hidden=True)
+@click.pass_context
+def bogon_prepare(ctx, **kwargs):
+    from .data import prepare_data_bogons
+    from .bogon import get_bogon_ipsets
+    os.makedirs(DATA_DIR, exist_ok=True)
+    prepare_data_bogons()
+    ctx.obj['bogon'] = get_bogon_ipsets()
+
+
+@bogon_group.command('check')
+@click.argument('address', type=str)
+@click.pass_context
+def bogon_check(ctx, address):
+    """Check a ip address/network is bogon or not"""
+    ctx.forward(bogon_prepare)
+    net = load_network(address)
+    bogon_sets = ctx.obj['bogon']
+    if net.version == 4:
+        print(net in bogon_sets['ipv4'])
+    else:
+        print(net in bogon_sets['ipv6'])
 
 
 @cli.group('bgp')

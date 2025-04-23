@@ -3,7 +3,10 @@ import json
 
 import pybgpstream
 
-from .config import DATA_DIR, BGP_V4_COLLECTOR, BGP_V6_COLLECTOR, DT_NOW, ROOT_LOGGER
+from .config import (
+    DATA_DIR, BGP_V4_COLLECTOR, BGP_V6_COLLECTOR, BOGONS_DATA,
+    DT_NOW, ROOT_LOGGER,
+)
 from .utils import download_asn_data, query_latest_bgp_data, download_remote_data
 
 logger = ROOT_LOGGER.getChild('data')
@@ -43,6 +46,34 @@ def get_stream_asn(filename=None):
             line = line.strip()
             if line:
                 yield json.loads(line)
+
+
+def prepare_data_bogons():
+    for item in BOGONS_DATA.values():
+        filename = item['filename']
+        filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
+        if os.path.isfile(filepath) is False:
+            download_remote_data(item['url'], DATA_DIR, filename)
+        logger.info(f"bogon data found at {filepath}")
+
+
+def get_bogon_data():
+    data = {}
+    for k, v in BOGONS_DATA.items():
+        data[k] = []
+        filename = v['filename']
+        filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
+        if os.path.isfile(filepath) is False:
+            raise FileNotFoundError(filepath)
+        with open(filepath) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                if line.startswith('#'):
+                    continue
+                data[k].append(line)
+    return data
 
 
 def get_bgp_info():
