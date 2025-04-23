@@ -28,8 +28,7 @@ jobs:
         uses: cargo-bins/cargo-binstall@main
       - name: Setup bgpstream wandio repository
         run: >-
-          curl -1sLf 'https://dl.cloudsmith.io/public/wand/libwandio/cfg/setup/bash.deb.sh' |
-          sudo -E bash
+          curl -s https://pkg.caida.org/os/$(lsb_release -si|awk '{print tolower($0)}')/bootstrap.sh | bash
       - name: Install bgpstream library
         run: sudo apt-get update && sudo apt install -y wget bgpstream
       - name: Install bgpkit
