@@ -42,7 +42,7 @@ jobs:
       - name: Install bgpkit
         uses: taiki-e/install-action@v2
         with:
-          tool: bgpkit-broker,bgpkit-parser
+          tool: asninfo,bgpkit-broker,bgpkit-parser
       - name: Install project
         run: pip install .
       - name: Generate ip lists
