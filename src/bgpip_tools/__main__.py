@@ -142,9 +142,6 @@ def bgp_prepare(ctx, **kwargs):
             kw['output_dir'] = ctx.params['output_dir']
         ctx.obj['asns'] = ctx.invoke(asn_generate, **kw)
 
-    # prepare bogon
-    ctx.invoke(bogon_prepare, **kw)
-
     # load bgp info
     if 'bgp' not in ctx.obj:
         ctx.obj['bgp'] = prepare_data_bgp()
