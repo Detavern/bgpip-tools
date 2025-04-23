@@ -75,7 +75,7 @@ def asn_generate(ctx, indent, output_dir, filename):
 
     fp = os.path.join(output_dir, filename)
     with open(fp, 'w') as f:
-        logger.info(f'asn: {filename} generated at {fp}')
+        logger.getChild('asn').info(f'{filename} generated at {fp}')
         json.dump(asns, f, indent=indent)
     return asns
 
@@ -141,7 +141,7 @@ def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
             with open(fp, 'w') as f:
                 for cidr in cidrs:
                     f.write(f'{cidr}\n')
-                logger.info(f'bgp: v4/{k} generated at {fp}')
+                logger.getChild('bgp').info(f'v4/{k} generated at {fp}')
 
     if not no_ipv6:
         v6_output_dir = os.path.join(output_dir, DEFAULT_CIDRS_DIR, 'v6')
@@ -153,7 +153,7 @@ def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
             with open(fp, 'w') as f:
                 for cidr in cidrs:
                     f.write(f'{cidr}\n')
-                logger.info(f'bgp: v6/{k} generated at {fp}')
+                logger.getChild('bgp').info(f'v6/{k} generated at {fp}')
 
     return cidr_map
 

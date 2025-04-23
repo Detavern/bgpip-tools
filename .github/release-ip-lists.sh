@@ -16,5 +16,4 @@ function release_ip_lists() {
     popd
 }
 
-release_ip_lists ip-lists
-release_ip_lists ip-lists-nightly
+release_ip_lists $1

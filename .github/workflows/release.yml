@@ -52,9 +52,35 @@ jobs:
             bgpkit-parser@${{ env.BGPKIT_PARSER_VERSION }}
       - name: Install project
         run: pip install .
+      - name: Check if config/stable changed
+        id: config_stable
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^config/stable/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Check if config/nightly changed
+        id: config_nightly
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^config/nightly/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
       - name: Generate ip lists
+        if: steps.config_stable.outputs.changed == 'true'
         run: bgpip-tools bgp generate -o ip-lists
       - name: Release ip lists
-        run: .github/release-ip-lists.sh
+        if: steps.config_stable.outputs.changed == 'true'
+        run: .github/release-ip-lists.sh ip-lists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate ip lists nightly
+        if: steps.config_nightly.outputs.changed == 'true'
+        run: bgpip-tools -c config/nightly bgp generate -o ip-lists-nightly
+      - name: Release ip lists nightly
+        if: steps.config_nightly.outputs.changed == 'true'
+        run: .github/release-ip-lists.sh ip-lists-nightly
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
