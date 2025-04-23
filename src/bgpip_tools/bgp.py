@@ -52,9 +52,11 @@ def load_cidr_by_asns(bgp_config, asns, v4=False, v6=False, dry_run=False):
                         result[k].add(prefix)
 
     # wrapper
+    # TODO: require an estimated total size
+    # total=estimated,
     for i, elem in enumerate(tqdm.tqdm(
             get_stream_bgp(bgp_config['filepath']),
-            ascii=True, desc='Filtering BGP Data', total=bgp_config['rough_size'],
+            ascii=True, desc='Filtering BGP Data',
         )):
         try:
             _handle_elem(elem)
