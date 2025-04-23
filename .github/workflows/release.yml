@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update
-          apt-get install -y git curl wget lsb-release sudo
+          apt-get install -y git curl wget lsb-release sudo python3 python3-pip
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup rust
@@ -43,14 +43,6 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: bgpkit-broker,bgpkit-parser
-      - name: Clear python cache
-        run: |
-          rm -rf /__t/Python
-      - name: Setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: pip
       - name: Install project
         run: pip install .
       - name: Generate ip lists
