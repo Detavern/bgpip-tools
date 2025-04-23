@@ -53,7 +53,7 @@ jobs:
       - name: Install project
         run: pip install .
       - name: Generate ip lists
-        run: bgpip-tools bgp generate -d -o ip-lists
+        run: bgpip-tools bgp generate -o ip-lists
       - name: Release ip lists
         run: .github/release-ip-lists.sh
         env:
