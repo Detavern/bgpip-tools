@@ -75,18 +75,18 @@ jobs:
       - name: Install project
         run: pip install .
       - name: Generate ip lists
-        if: steps.config_stable.outputs.changed == 'true'
+        if: steps.config_stable.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: bgpip-tools bgp generate -o ip-lists
       - name: Release ip lists
-        if: steps.config_stable.outputs.changed == 'true'
+        if: steps.config_stable.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: .github/release-ip-lists.sh ip-lists
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate ip lists nightly
-        if: steps.config_nightly.outputs.changed == 'true'
+        if: steps.config_nightly.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: bgpip-tools -c config/nightly bgp generate -o ip-lists-nightly
       - name: Release ip lists nightly
-        if: steps.config_nightly.outputs.changed == 'true'
+        if: steps.config_nightly.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         run: .github/release-ip-lists.sh ip-lists-nightly
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
