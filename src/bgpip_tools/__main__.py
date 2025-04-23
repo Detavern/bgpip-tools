@@ -5,30 +5,36 @@ import json
 
 import click
 
-from .config import DATA_DIR, CONFIG_DIR, DIST_DIR
-
+from .config import DATA_DIR, DIST_DIR, ROOT_LOGGER, load_config
 
 DEFAULT_ASNS_FILENAME = 'asns.json'
 DEFAULT_CIDRS_DIR = 'cidrs'
 
+logger = ROOT_LOGGER.getChild('cli')
+
 
 @click.group()
+@click.option('-c', '--config-dir', type=str, default=None, help="configuration directory")
 @click.pass_context
-def cli(ctx):
+def cli(ctx, config_dir):
     ctx.ensure_object(dict)
+    if config_dir and os.path.isdir(config_dir) is False:
+        raise click.ClickException(f'could not find configuration directory at {config_dir}')
+    load_config(config_dir)
 
 
 @cli.group('config')
 def config_group():
     """Configuration related commands"""
-    if os.path.isdir(CONFIG_DIR) is False:
-        raise click.ClickException(f'could not find configuration directory at {CONFIG_DIR}')
 
 
 @config_group.command('print')
-def config_print():
+@click.option('-i', '--indent', type=int, default=2, help="output strings/file indentations if available")
+def config_print(indent):
+    """Print current configurations"""
     from .config import get_config_dict
-    print(get_config_dict())
+    config = get_config_dict()
+    print(json.dumps(config, indent=indent))
 
 
 @cli.group('asn')
@@ -59,6 +65,7 @@ def asn_stat(ctx):
 @click.option('-o', '--output-dir', type=str, default=DIST_DIR, help="output directory")
 @click.option('-f', '--filename', type=str, default=DEFAULT_ASNS_FILENAME, help="output filename")
 def asn_generate(ctx, indent, output_dir, filename):
+    """Generate ASN mapping from asn_filters"""
     from .asn import load_asns_by_config
 
     ctx.forward(asn_prepare)
@@ -68,7 +75,7 @@ def asn_generate(ctx, indent, output_dir, filename):
 
     fp = os.path.join(output_dir, filename)
     with open(fp, 'w') as f:
-        print(f'DIST[asns] generated at {fp}')
+        logger.info(f'asn: {filename} generated at {fp}')
         json.dump(asns, f, indent=indent)
     return asns
 
@@ -117,7 +124,7 @@ def bgp_info(ctx, indent):
 @click.option('-n6', '--no-ipv6', is_flag=True, help="skip ipv6 cidrs generate")
 @click.pass_context
 def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
-    """Generate CIDRs from ASN filters and BGP data"""
+    """Generate CIDRs from ASN mapping and BGP data"""
     from .bgp import load_cidr_by_asns
 
     ctx.forward(bgp_prepare)
@@ -134,7 +141,7 @@ def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
             with open(fp, 'w') as f:
                 for cidr in cidrs:
                     f.write(f'{cidr}\n')
-                print(f'DIST[ipv4][{k}] generated at {fp}')
+                logger.info(f'bgp: v4/{k} generated at {fp}')
 
     if not no_ipv6:
         v6_output_dir = os.path.join(output_dir, DEFAULT_CIDRS_DIR, 'v6')
@@ -146,7 +153,7 @@ def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
             with open(fp, 'w') as f:
                 for cidr in cidrs:
                     f.write(f'{cidr}\n')
-                print(f'DIST[ipv6][{k}] generated at {fp}')
+                logger.info(f'bgp: v6/{k} generated at {fp}')
 
     return cidr_map
 

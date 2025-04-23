@@ -3,8 +3,10 @@ import json
 
 import pybgpstream
 
-from .config import DATA_DIR, BGP_V4_COLLECTOR, BGP_V6_COLLECTOR, DT_NOW
+from .config import DATA_DIR, BGP_V4_COLLECTOR, BGP_V6_COLLECTOR, DT_NOW, ROOT_LOGGER
 from .utils import download_asn_data, query_latest_bgp_data, download_remote_data
+
+logger = ROOT_LOGGER.getChild('data')
 
 
 def prepare_data_asn():
@@ -12,27 +14,27 @@ def prepare_data_asn():
     filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
     if os.path.isfile(filepath) is False:
         download_asn_data(DATA_DIR, filename)
-    print(f"DATA[asninfo] found at {filepath}")
+    logger.info(f"asn data found at {filepath}")
 
 
 def stat_data_asn(filename=None):
     if filename is None:
         filename = f'asn_{DT_NOW.strftime("%Y%m%d")}.jsonl'
     filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
-    print(f"DATA[asninfo] load data at {filepath}")
+    logger.info(f"loading asn data at {filepath}")
     if os.path.isfile(filepath) is False:
         raise FileNotFoundError(filepath)
 
     with open(filepath) as f:
         lines = sum(1 for _ in f)
-    print(f'line counts: {lines}')
+    logger.info(f"line counts: {lines}")
 
 
 def get_stream_asn(filename=None):
     if filename is None:
         filename = f'asn_{DT_NOW.strftime("%Y%m%d")}.jsonl'
     filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
-    print(f"DATA[asninfo] load data at {filepath}")
+    logger.info(f"loading asn data at {filepath}")
     if os.path.isfile(filepath) is False:
         raise FileNotFoundError(filepath)
 
@@ -59,7 +61,7 @@ def prepare_data_bgp():
         filepath = os.path.abspath(os.path.join(DATA_DIR, filename))
         if os.path.isfile(filepath) is False:
             download_remote_data(url, DATA_DIR, filename)
-        print(f"DATA[bgp] found at {filepath}")
+        logger.info(f"bgp data found at {filepath}")
         res[k] = {
             'collector': info['collector'],
             'data_dir': DATA_DIR,
@@ -80,6 +82,7 @@ def get_stream_bgp(filepath):
     """
     stream = pybgpstream.BGPStream(data_interface='singlefile')
     stream.set_data_interface_option("singlefile", "rib-file", filepath)
+    logger.info(f"loading bgp data at {filepath}")
     for rec in stream.records():
         if rec.status != "valid":
             raise ValueError(f"record in RIB file at {filepath} is not valid")

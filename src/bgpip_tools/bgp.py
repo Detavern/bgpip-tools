@@ -4,8 +4,11 @@ import tqdm
 import netaddr
 
 from .data import get_stream_bgp
+from .config import ROOT_LOGGER
 
 DRY_RUN_COUNTER = 100_000
+
+logger = ROOT_LOGGER.getChild('bgp')
 
 
 def load_cidr_by_asns(bgp_config, asns, v4=False, v6=False, dry_run=False):
@@ -41,8 +44,7 @@ def load_cidr_by_asns(bgp_config, asns, v4=False, v6=False, dry_run=False):
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            print(elem.fields)
-            print(f'error got asn {e}')
+            logger.error(f'parse asn error {e}, element: {elem}')
         else:
             for k, v in asns_sets.items():
                 if last_asn in v:
@@ -67,7 +69,7 @@ def load_cidr_by_asns(bgp_config, asns, v4=False, v6=False, dry_run=False):
 
     cidr_map = {}
     for k, v in result.items():
-        print(f"merging {k}[{len(v)}] cidrs ...")
+        logger.info(f"merging {k}[{len(v)}] cidrs ...")
         merged = netaddr.cidr_merge(v)
         cidr_map[k] = [str(v.cidr) for v in merged]
     return cidr_map

@@ -1,0 +1,6 @@
+asn_filters:
+  filters:
+    - country: CN
+      regexp: "(china ?telecom|chinanet)"
+  includes:
+    - 4847
