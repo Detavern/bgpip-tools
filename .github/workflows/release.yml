@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+  workflow_dispatch:
+  schedule:
+    - cron: "45 2 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TQDM_MININTERVAL: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: cargo-bins/cargo-binstall@main
+      - run: sudo apt-get update && sudo apt install -y wget bgpstream
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: bgpkit-broker,bgpkit-parser
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install .
+      - run: bgpip-tools bgp generate -d -o ip-lists
+      - name: Release release ip lists
+        run: .github/release-ip-lists.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

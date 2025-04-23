@@ -55,18 +55,19 @@ def asn_stat(ctx):
 @asn_group.command('generate')
 @click.pass_context
 @click.option('-i', '--indent', type=int, default=2)
-@click.option('-o', '--output', type=str, default=None)
-def asn_generate(ctx, indent, output):
+@click.option('-o', '--output-dir', type=str, default=DIST_DIR)
+@click.option('-f', '--filename', type=str, default=DEFAULT_ASNS_FILENAME)
+def asn_generate(ctx, indent, output_dir, filename):
     from .asn import load_asns_by_config
 
     ctx.forward(asn_prepare)
-    if output is None:
-        os.makedirs(DIST_DIR, exist_ok=True)
-        output = os.path.join(DIST_DIR, DEFAULT_ASNS_FILENAME)
+    os.makedirs(output_dir, exist_ok=True)
+
     asns = load_asns_by_config()
 
-    with open(output, 'w') as f:
-        print(f'DIST[asns] generated at {output}')
+    fp = os.path.join(output_dir, filename)
+    with open(fp, 'w') as f:
+        print(f'DIST[asns] generated at {fp}')
         json.dump(asns, f, indent=indent)
     return asns
 
@@ -88,7 +89,10 @@ def bgp_prepare(ctx, **kwargs):
             with open(asns_fp) as f:
                 ctx.obj['asns'] = json.load(f)
     if 'asns' not in ctx.obj:
-        ctx.obj['asns'] = ctx.invoke(asn_generate)
+        kw = {}
+        if 'output_dir' in ctx.params:
+            kw['output_dir'] = ctx.params['output_dir']
+        ctx.obj['asns'] = ctx.invoke(asn_generate, **kw)
 
     # load bgp info
     if 'bgp' not in ctx.obj:
@@ -97,7 +101,7 @@ def bgp_prepare(ctx, **kwargs):
 
 @bgp_group.command('generate')
 @click.option('-u', '--use-dist', is_flag=True, default=False)
-@click.option('-o', '--output-dir', type=str, default=None)
+@click.option('-o', '--output-dir', type=str, default=DIST_DIR)
 @click.option('-d', '--dry-run', is_flag=True, help='dry run')
 @click.option('-n4', '--no-ipv4', is_flag=True, help='skip ipv4 cidrs generate')
 @click.option('-n6', '--no-ipv6', is_flag=True, help='skip ipv6 cidrs generate')
@@ -106,13 +110,11 @@ def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
     from .bgp import load_cidr_by_asns
 
     ctx.forward(bgp_prepare)
-    if output_dir is None:
-        output_dir = os.path.join(DIST_DIR, DEFAULT_CIDRS_DIR)
     os.makedirs(output_dir, exist_ok=True)
 
     cidr_map = {}
     if not no_ipv4:
-        v4_output_dir = os.path.join(output_dir, 'v4')
+        v4_output_dir = os.path.join(output_dir, DEFAULT_CIDRS_DIR, 'v4')
         os.makedirs(v4_output_dir, exist_ok=True)
         cidr_map['ipv4'] = load_cidr_by_asns(ctx.obj['bgp']['ipv4'], ctx.obj['asns'], dry_run)
         for k, cidrs in cidr_map['ipv4'].items():
@@ -123,7 +125,7 @@ def bgp_generate(ctx, use_dist, output_dir, dry_run, no_ipv4, no_ipv6):
                 print(f'DIST[ipv4][{k}] generated at {fp}')
 
     if not no_ipv6:
-        v6_output_dir = os.path.join(output_dir, 'v6')
+        v6_output_dir = os.path.join(output_dir, DEFAULT_CIDRS_DIR, 'v6')
         os.makedirs(v6_output_dir, exist_ok=True)
         cidr_map['ipv6'] = load_cidr_by_asns(ctx.obj['bgp']['ipv6'], ctx.obj['asns'], dry_run)
         for k, cidrs in cidr_map['ipv6'].items():

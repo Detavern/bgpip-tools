@@ -1,5 +1,0 @@
-click
-netaddr
-pyyaml
-pybgpstream
-tqdm

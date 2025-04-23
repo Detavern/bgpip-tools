@@ -2,6 +2,8 @@ import os
 import yaml
 import datetime
 
+__version__ = "0.1.0"
+
 WORK_DIR = os.getcwd()
 DATA_DIR = os.path.join(WORK_DIR, 'data')
 CONFIG_DIR = os.path.join(WORK_DIR, 'config')

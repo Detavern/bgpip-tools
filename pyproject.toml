@@ -2,4 +2,22 @@
 requires = ["setuptools>=64", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools_scm]
+[project]
+name = "bgpip_tools"
+authors = [{ name = "Detavern", email = "detavern@live.com" }]
+description = "This script fetches and merge the IP information from BGP feeds."
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["asn", "bgp", "cidr", "ip"]
+classifiers = ["Programming Language :: Python :: 3"]
+dependencies = ["click", "netaddr", "pyyaml", "pybgpstream", "tqdm"]
+dynamic = ["version"]
+
+[project.scripts]
+bgpip-tools = "bgpip_tools.__main__:cli"
+
+[tool.setuptools]
+package-data = { "bgpip_tools" = ["*.json"] }
+
+[tool.setuptools.dynamic]
+version = { attr = "bgpip_tools.config.__version__" }
