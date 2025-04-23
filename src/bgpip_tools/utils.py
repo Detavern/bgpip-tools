@@ -26,7 +26,10 @@ def query_latest_bgp_data(collector: str):
         raise click.ClickException(f'Could not find "{cmds[0]}" in the $PATH')
 
     completed = subprocess.run(cmds, capture_output=True)
-    assert completed.returncode == 0
+    if completed.returncode != 0:
+        print(completed.stdout)
+        print(completed.stderr)
+        raise ValueError(completed.returncode)
     js = json.loads(completed.stdout)
     for info in js:
         if info.get('data_type') == 'rib':
