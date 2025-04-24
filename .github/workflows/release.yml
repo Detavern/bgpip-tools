@@ -41,7 +41,8 @@ jobs:
       - name: Check if config/stable changed
         id: config_stable
         run: |
-          if git diff --diff-filter=d --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^config/stable/'; then
+          if git diff --diff-filter=d --name-only ${{ github.event.before }} ${{ github.sha }} \
+            | grep '^config/stable/'; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
@@ -49,7 +50,8 @@ jobs:
       - name: Check if config/nightly changed
         id: config_nightly
         run: |
-          if git diff --diff-filter=d --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^config/nightly/'; then
+          if git diff --diff-filter=d --name-only ${{ github.event.before }} ${{ github.sha }} \
+            | grep '^config/nightly/'; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
@@ -75,18 +77,30 @@ jobs:
       - name: Install project
         run: pip install .
       - name: Generate ip lists
-        if: steps.config_stable.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        if: >-
+          steps.config_stable.outputs.changed == 'true' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'
         run: bgpip-tools bgp generate -o ip-lists
       - name: Release ip lists
-        if: steps.config_stable.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        if: >-
+          steps.config_stable.outputs.changed == 'true' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'
         run: .github/release-ip-lists.sh ip-lists
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate ip lists nightly
-        if: steps.config_nightly.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        if: >-
+          steps.config_nightly.outputs.changed == 'true' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'
         run: bgpip-tools -c config/nightly bgp generate -o ip-lists-nightly
       - name: Release ip lists nightly
-        if: steps.config_nightly.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        if: >-
+          steps.config_nightly.outputs.changed == 'true' ||
+          github.event_name == 'workflow_dispatch' ||
+          github.event_name == 'schedule'
         run: .github/release-ip-lists.sh ip-lists-nightly
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
