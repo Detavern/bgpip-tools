@@ -5,11 +5,32 @@ import netaddr
 
 from .data import get_stream_bgp
 from .bogon import get_bogon_ipset
-from .config import ROOT_LOGGER
+from .config import ROOT_LOGGER, get_config_dict
 
 DRY_RUN_COUNTER = 100_000
 
 logger = ROOT_LOGGER.getChild('bgp')
+
+
+class BGPFilterGroup:
+    def __init__(self, include_cidrs: list=None, exclude_cidrs: list=None):
+        self.include_cidrs = set(include_cidrs) if include_cidrs else set()
+        self.exclude_cidrs = set(exclude_cidrs) if exclude_cidrs else set()
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+
+def load_bgp_filters():
+    bgp_filter_dict = {}
+    for k, v in get_config_dict().items():
+        bgp_filters = v.get('asn_filters')
+        if not bgp_filters:
+            continue
+        filter_group = BGPFilterGroup.from_config(bgp_filters)
+        bgp_filter_dict[k] = filter_group
+    return bgp_filter_dict
 
 
 def load_cidr_by_asns(bgp_config, asns, v4=False, v6=False, dry_run=False):
@@ -48,11 +69,12 @@ def load_cidr_by_asns(bgp_config, asns, v4=False, v6=False, dry_run=False):
             logger.error(f'parse asn error {e}, element: {elem}')
         else:
             for k, v in asns_sets.items():
-                if last_asn in v:
-                    if v4 and not is_v6_prefix:
-                        result[k].add(prefix)
-                    if v6 and is_v6_prefix:
-                        result[k].add(prefix)
+                if last_asn not in v:
+                    continue
+                if v4 and not is_v6_prefix:
+                    result[k].add(prefix)
+                if v6 and is_v6_prefix:
+                    result[k].add(prefix)
 
     # wrapper
     # TODO: require an estimated total size
