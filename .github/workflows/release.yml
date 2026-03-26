@@ -17,8 +17,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: python:3-bookworm
     env:
       TQDM_MININTERVAL: 5
       DISABLE_DOWNLOAD_PROGRESS: 1
@@ -26,15 +24,6 @@ jobs:
       BGPKIT_BROKER_VERSION: "0.7.6"
       BGPKIT_PARSER_VERSION: "0.10.6"
     steps:
-      - name: Install dependencies
-        run: |
-          apt-get update -qq
-          apt-get install -y -qq git curl wget lsb-release sudo build-essential
-
-      - name: Configure Git in container
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -67,14 +56,15 @@ jobs:
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@main
 
-      - name: Setup bgpstream wandio repository
-        run: >-
-          curl -s https://pkg.caida.org/os/$(lsb_release -si|awk '{print tolower($0)}')/bootstrap.sh | bash
+      - name: Add bgpstream repository
+        run: |
+          curl -fsSL https://pkg.caida.org/os/$(. /etc/os-release && echo $ID)/bootstrap.sh -o caida-bootstrap.sh
+          sudo bash caida-bootstrap.sh
 
       - name: Install bgpstream
         run: |
-          apt-get update -qq
-          apt-get install -y -qq bgpstream
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bgpstream
 
       - name: Install bgpkit
         uses: taiki-e/install-action@v2
@@ -83,6 +73,11 @@ jobs:
             asninfo@${{ env.ASNINFO_VERSION }},
             bgpkit-broker@${{ env.BGPKIT_BROKER_VERSION }},
             bgpkit-parser@${{ env.BGPKIT_PARSER_VERSION }}
+
+      - name: Use Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Install project
         run: pip install .
