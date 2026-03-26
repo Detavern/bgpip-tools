@@ -17,6 +17,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: python:3-bookworm
     env:
       TQDM_MININTERVAL: 5
       DISABLE_DOWNLOAD_PROGRESS: 1
@@ -26,8 +28,12 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends lsb-release
+          apt-get update
+          apt-get install -y git curl wget lsb-release sudo build-essential
+
+      - name: Configure Git in container
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,11 +61,11 @@ jobs:
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@main
+      - name: Install Rust and cargo-binstall
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cargo install cargo-binstall
 
       - name: Add bgpstream repository
         run: |
