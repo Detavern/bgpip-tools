@@ -24,6 +24,11 @@ jobs:
       BGPKIT_BROKER_VERSION: "0.7.6"
       BGPKIT_PARSER_VERSION: "0.10.6"
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends lsb-release
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -58,8 +63,7 @@ jobs:
 
       - name: Add bgpstream repository
         run: |
-          curl -fsSL https://pkg.caida.org/os/$(. /etc/os-release && echo $ID)/bootstrap.sh -o caida-bootstrap.sh
-          sudo bash caida-bootstrap.sh
+          curl -s https://pkg.caida.org/os/$(lsb_release -si|awk '{print tolower($0)}')/bootstrap.sh | bash
 
       - name: Install bgpstream
         run: |
