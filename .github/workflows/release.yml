@@ -28,16 +28,19 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apt-get update
-          apt-get install -y git curl wget lsb-release sudo build-essential
+          apt-get update -qq
+          apt-get install -y -qq git curl wget lsb-release sudo build-essential bgpstream
+
       - name: Configure Git in container
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.ref }}
+
       - name: Check if config/stable changed
         id: config_stable
         run: |
@@ -47,6 +50,7 @@ jobs:
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
+
       - name: Check if config/nightly changed
         id: config_nightly
         run: |
@@ -56,17 +60,17 @@ jobs:
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-      - name: Setup rust
+
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      - name: Setup rust cargo
+
+      - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@main
+
       - name: Setup bgpstream wandio repository
         run: >-
           curl -s https://pkg.caida.org/os/$(lsb_release -si|awk '{print tolower($0)}')/bootstrap.sh | bash
-      - name: Install bgpstream library
-        run: |
-          apt-get update
-          apt install -y bgpstream
+
       - name: Install bgpkit
         uses: taiki-e/install-action@v2
         with:
@@ -74,14 +78,17 @@ jobs:
             asninfo@${{ env.ASNINFO_VERSION }},
             bgpkit-broker@${{ env.BGPKIT_BROKER_VERSION }},
             bgpkit-parser@${{ env.BGPKIT_PARSER_VERSION }}
+
       - name: Install project
         run: pip install .
+
       - name: Generate ip lists
         if: >-
           steps.config_stable.outputs.changed == 'true' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'
         run: bgpip-tools bgp generate -o ip-lists
+
       - name: Release ip lists
         if: >-
           steps.config_stable.outputs.changed == 'true' ||
@@ -90,12 +97,14 @@ jobs:
         run: .github/release-ip-lists.sh ip-lists
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Generate ip lists nightly
         if: >-
           steps.config_nightly.outputs.changed == 'true' ||
           github.event_name == 'workflow_dispatch' ||
           github.event_name == 'schedule'
         run: bgpip-tools -c config/nightly bgp generate -o ip-lists-nightly
+
       - name: Release ip lists nightly
         if: >-
           steps.config_nightly.outputs.changed == 'true' ||
