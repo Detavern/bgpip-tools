@@ -12,7 +12,7 @@ def command_exists(cmd) -> bool:
 def download_asn_data(data_dir, filename):
     filepath = os.path.join(data_dir, filename)
 
-    cmds = ['asninfo', filepath]
+    cmds = ['asninfo', 'generate', filepath]
     if command_exists(cmds[0]) is False:
         raise click.ClickException(f'Could not find "{cmds[0]}" in the $PATH')
 

@@ -22,7 +22,7 @@ jobs:
     env:
       TQDM_MININTERVAL: 5
       DISABLE_DOWNLOAD_PROGRESS: 1
-      ASNINFO_VERSION: "0.2.1"
+      ASNINFO_VERSION: "0.4.2"
       BGPKIT_BROKER_VERSION: "0.7.6"
       BGPKIT_PARSER_VERSION: "0.10.6"
     steps:
@@ -83,11 +83,6 @@ jobs:
             asninfo@${{ env.ASNINFO_VERSION }},
             bgpkit-broker@${{ env.BGPKIT_BROKER_VERSION }},
             bgpkit-parser@${{ env.BGPKIT_PARSER_VERSION }}
-
-      - name: Use Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
 
       - name: Install project
         run: pip install .
